@@ -5,18 +5,48 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("StartupCommands", "Agamemnon", "0.2.0")]
-    [Description("Runs a set of commands at server startup")]
+    [Info("StartupCommands", "Agamemnon", "0.3.0")]
+    [Description("Runs a set of commands after server startups and/or server wipes")]
     internal class StartupCommands : RustPlugin
     {
         #region Initialization
 
+        private bool wiped = false;
+
         private void OnServerInitialized()
         {
-            Puts("Running startup commands:");
-            int count = 0;
+            if(wiped == true)
+            {
+                Puts("Initialising post-wipe commands.");
+                int wipeCount = 0;
 
-            foreach (StartupCommand startupCommand in config.startupCommands)
+                foreach (ServerCommand wipeCommand in config.wipeCommands)
+                {
+                    if (wipeCommand.Enabled)
+                    {
+                        string parameters = "";
+
+                        foreach (string parameter in wipeCommand.Parameters)
+                        {
+                            parameters = parameters + " \"" + parameter + "\"";
+                        }
+
+                        rust.RunServerCommand(wipeCommand.Command + parameters);
+
+                        wipeCount++;
+                    }
+                }
+
+                if (wipeCount == 0)
+                {
+                    Puts("All post-wipe commands are disabled.");
+                }
+            }
+
+            Puts("Initialising startup commands.");
+            int startupCount = 0;
+
+            foreach (ServerCommand startupCommand in config.startupCommands)
             {
                 if (startupCommand.Enabled)
                 {
@@ -29,14 +59,19 @@ namespace Oxide.Plugins
 
                     rust.RunServerCommand(startupCommand.Command + parameters);
 
-                    count++;
+                    startupCount++;
                 }
             }
 
-            if (count == 0)
+            if (startupCount == 0)
             {
                 Puts("All startup commands are disabled.");
             }
+        }
+
+        private void OnNewSave()
+        {
+            wiped = true;
         }
 
         #endregion Initialization
@@ -48,21 +83,27 @@ namespace Oxide.Plugins
         private class Configuration
         {
             [JsonProperty(PropertyName = "Startup commands", ObjectCreationHandling = ObjectCreationHandling.Replace)]
-            public List<StartupCommand> startupCommands = new List<StartupCommand>()
+            public List<ServerCommand> startupCommands = new List<ServerCommand>()
             {
-                new StartupCommand("server.hostname", new List<string> { "My Rust Server", }, false),
-                new StartupCommand("env.time", new List<string> { "9", }, false),
-                new StartupCommand("env.progresstime", new List<string> { "false", }, false)
+                new ServerCommand("env.time", new List<string> { "9", }, false),
+                new ServerCommand("env.progresstime", new List<string> { "false", }, false)
+            };
+
+            [JsonProperty(PropertyName = "Wipe commands", ObjectCreationHandling = ObjectCreationHandling.Replace)]
+            public List<ServerCommand> wipeCommands = new List<ServerCommand>()
+            {
+				new ServerCommand("pasteback", new List<string> { "arena", "stability", "false"}, false),
+                new ServerCommand("pasteback", new List<string> { "adminbase", "undestr", "true"}, false)
             };
         }
 
-        class StartupCommand
+        class ServerCommand
         {
             public string Command;
             public List<string> Parameters;
             public bool Enabled;
 
-            public StartupCommand(string command, List<string> parameters, bool enabled)
+            public ServerCommand(string command, List<string> parameters, bool enabled)
             {
                 Command = command;
                 Parameters = parameters;

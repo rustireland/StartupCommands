@@ -1,5 +1,5 @@
 # StartupCommands
-**StartupCommands** is an [Oxide](https://umod.org/) plugin that allows Rust server admins to run a configurable list of commands upon server startup. Each command can be individually enabled or disabled in the configuration. The plugin correctly supports multiple-parameter commands with spaces in the parameters.
+**StartupCommands** is an [Oxide](https://umod.org/) plugin that allows Rust server admins to run configurable lists of commands after server wipes and server restarts. Each command can be individually enabled or disabled in the configuration. The plugin correctly supports multiple-parameter commands with spaces in the parameters.
 
 ## Installation
 Download the plugin:
@@ -26,13 +26,6 @@ When run for the first time, the plugin will create a default configuration file
 {
   "Startup commands": [
     {
-      "Command": "server.hostname",
-      "Parameters": [
-        "My Rust Server"
-      ],
-      "Enabled": false
-    },
-    {
       "Command": "env.time",
       "Parameters": [
         "9"
@@ -46,9 +39,26 @@ When run for the first time, the plugin will create a default configuration file
       ],
       "Enabled": false
     }
+  ],
+  "Wipe commands": [
+    {
+      "Command": "pasteback",
+      "Parameters": [
+        "arena",
+        "stability",
+        "false"
+      ],
+      "Enabled": false
+    },
+    {
+      "Command": "pasteback",
+      "Parameters": [
+        "adminbase",
+        "undestr",
+        "true"
+      ],
+      "Enabled": false
+    }
   ]
 }
 ```
-
-## Changelog
-* 01-May-2020 - 0.2.0 - Initial release
